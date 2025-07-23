@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1070505978588",
+    "project_id": "socialloginapp-f64c3",
+    "storage_bucket": "socialloginapp-f64c3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1070505978588:android:9a60fcf48df5845a61a219",
+        "android_client_info": {
+          "package_name": "com.example.social_login_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmn6gSh6O5M30uFPafmPTyB2WQGTeM0vE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
