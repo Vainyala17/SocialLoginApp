@@ -13,13 +13,19 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late List<Widget> _screens;
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeTab(),
-    const SearchTab(),
-    const ProfileTab(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Initialize _screens inside initState
+    _screens = [
+      const HomeTab(),
+      const SearchTab(),
+      ProfileTab(user: widget.user), // ✅ Now it's valid
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -141,10 +147,14 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
   void _showLogoutDialog() {
+    // Check if widget is still mounted before showing dialog
+    if (!mounted) return;
+
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) { // Use different variable name
         return AlertDialog(
           title: const Text('Logout'),
           content: const Text('Are you sure you want to logout?'),
@@ -152,40 +162,63 @@ class _HomeScreenState extends State<HomeScreen> {
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop(); // Use dialogContext
               },
             ),
             TextButton(
               child: const Text('Logout'),
               onPressed: () async {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop(); // Close dialog first
 
-                // Show loading
+                // Check if widget is still mounted before proceeding
+                if (!mounted) return;
+
+                // Show loading with proper context check
                 showDialog(
                   context: context,
                   barrierDismissible: false,
-                  builder: (context) => const Center(
+                  builder: (loadingContext) => const Center(
                     child: CircularProgressIndicator(),
                   ),
                 );
 
-                final success = await AuthService.logout();
+                try {
+                  final success = await AuthService.logout();
 
-                // Hide loading
-                Navigator.of(context).pop();
+                  // Check if widget is still mounted before proceeding
+                  if (!mounted) return;
 
-                if (success) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                        (route) => false,
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Logout failed. Please try again.'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  // Hide loading dialog
+                  Navigator.of(context).pop();
+
+                  if (success) {
+                    // Navigate to login screen
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          (route) => false,
+                    );
+                  } else {
+                    // Show error message
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Logout failed. Please try again.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  // Handle any errors during logout
+                  if (mounted) {
+                    Navigator.of(context).pop(); // Hide loading dialog
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Logout error: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
             ),
@@ -393,33 +426,67 @@ class SearchTab extends StatelessWidget {
 
 // Profile Tab
 class ProfileTab extends StatelessWidget {
-  const ProfileTab({Key? key}) : super(key: key);
+  final UserModel user;
+
+  const ProfileTab({Key? key, required this.user}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(20),
+    return Padding(
+      padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Profile Settings',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
+
+          _infoTile('Name', user.name),
+          _infoTile('Email', user.email),
+          _infoTile('Gender', user.gender ?? 'Not available'),
+          _infoTile('DOB', user.dob ?? 'Not available'),
+          _infoTile('Phone', user.phone ?? 'Not available'),
+
+          const Divider(height: 40),
           ListTile(
-            leading: Icon(Icons.settings),
-            title: Text('Settings'),
-            trailing: Icon(Icons.arrow_forward_ios),
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            trailing: const Icon(Icons.arrow_forward_ios),
           ),
           ListTile(
-            leading: Icon(Icons.help),
-            title: Text('Help & Support'),
-            trailing: Icon(Icons.arrow_forward_ios),
+            leading: const Icon(Icons.help),
+            title: const Text('Help & Support'),
+            trailing: const Icon(Icons.arrow_forward_ios),
           ),
           ListTile(
-            leading: Icon(Icons.info),
-            title: Text('About'),
-            trailing: Icon(Icons.arrow_forward_ios),
+            leading: const Icon(Icons.info),
+            title: const Text('About'),
+            trailing: const Icon(Icons.arrow_forward_ios),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoTile(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Text(
+            "$title: ",
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 16),
+            ),
           ),
         ],
       ),

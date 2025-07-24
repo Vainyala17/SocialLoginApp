@@ -20,14 +20,18 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkLoginStatus() async {
     await Future.delayed(const Duration(seconds: 2)); // Splash delay
 
+    print('Checking login status...');
     final user = await DBHelper.getUser();
+    print('User from DB: ${user?.name ?? 'null'}');
 
     if (mounted) {
       if (user != null) {
+        print('Navigating to HomeScreen');
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => HomeScreen(user: user)),
         );
       } else {
+        print('Navigating to LoginScreen');
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );

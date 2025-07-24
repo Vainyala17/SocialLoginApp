@@ -1,14 +1,21 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:http/http.dart' as http;
 import 'user_model.dart';
 import 'db_helper.dart';
 
 class AuthService {
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-    // Add this if you have a web client ID
-    // serverClientId: 'your-web-client-id.googleusercontent.com',
+    scopes: [
+      'email',
+      'profile',
+      'https://www.googleapis.com/auth/user.birthday.read',
+      'https://www.googleapis.com/auth/user.gender.read',
+      'https://www.googleapis.com/auth/user.phonenumbers.read',
+    ],
   );
 
   // Google Sign In with better error handling
@@ -27,6 +34,35 @@ class AuthService {
       await _googleSignIn.signOut();
 
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
+      final GoogleSignInAuthentication auth = await account!.authentication;
+      final String accessToken = auth.accessToken!;
+
+
+      final headers = {
+        'Authorization': 'Bearer ${auth.accessToken}',
+      };
+
+      final response = await http.get(
+        Uri.parse('https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses,birthdays,genders,phoneNumbers'),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('🟡 Full API response: ${response.body}');
+        print("Name: ${data['names']?[0]?['displayName']}");
+        print("Email: ${data['emailAddresses']?[0]?['value']}");
+        print("Birthday: ${data['birthdays']?[0]?['date']}");
+        print("Gender: ${data['genders']?[0]?['value']}");
+        print("Phone: ${data['phoneNumbers']?[0]?['value']}");
+      } else {
+        print('Failed to fetch user details: ${response.statusCode}');
+        print(response.body);
+      }
+
 
       // Hide loading indicator
       if (Navigator.canPop(context)) {
@@ -34,13 +70,28 @@ class AuthService {
       }
 
       if (account != null) {
+        final data = response.statusCode == 200 ? json.decode(response.body) : {};
+
+        final dobObj = data['birthdays']?[0]?['date'];
+        String? dob;
+        if (dobObj != null) {
+          dob = '${dobObj['year'] ?? '0000'}-${dobObj['month']?.toString().padLeft(2, '0') ?? '00'}-${dobObj['day']?.toString().padLeft(2, '0') ?? '00'}';
+        }
+
         final user = UserModel(
           id: account.id,
           name: account.displayName ?? 'Unknown',
           email: account.email,
           photo: account.photoUrl ?? '',
           loginType: 'google',
+          dob: dob,
+          gender: data['genders']?[0]?['value'],
+          phone: (data['phoneNumbers'] != null && data['phoneNumbers'].isNotEmpty)
+              ? data['phoneNumbers'][0]['value']
+              : null,
+
         );
+
 
         final success = await DBHelper.insertUser(user);
         if (success) {
