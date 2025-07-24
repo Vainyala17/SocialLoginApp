@@ -30,7 +30,7 @@ class DBHelper {
             loginType TEXT NOT NULL,
             dob TEXT,
             gender TEXT,
-            phone TEXT
+            phone TEXT,
           )
         ''');
       },
@@ -46,7 +46,7 @@ class DBHelper {
             loginType TEXT NOT NULL,
             dob TEXT,
             gender TEXT,
-            phone TEXT
+            phone TEXT,
           )
         ''');
       },

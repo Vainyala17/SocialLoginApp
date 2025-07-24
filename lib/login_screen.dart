@@ -61,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Google Login Button
               CustomSocialButton(
                 text: 'Continue with Google',
-                icon: Icons.g_mobiledata,
+                icon: Icons.g_mobiledata_rounded,
                 color: Colors.white,
                 textColor: Colors.black87,
                 onPressed: () async {
@@ -84,6 +84,42 @@ class _LoginScreenState extends State<LoginScreen> {
                 textColor: Colors.white,
                 onPressed: () async {
                   final user = await AuthService.signInWithFacebook(context);
+                  if (user != null) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => HomeScreen(user: user),
+                      ),
+                    );
+                  }
+                },
+              ),
+
+              // Instagram Login Button - UNCOMMENTED AND FIXED
+              CustomSocialButton(
+                text: 'Continue with Instagram',
+                icon: Icons.camera_alt,
+                color: const Color(0xFFD726DD), // Instagram's official color
+                textColor: Colors.white,
+                onPressed: () async {
+                  final user = await AuthService.signInWithInstagram(context);
+                  if (user != null) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => HomeScreen(user: user),
+                      ),
+                    );
+                  }
+                },
+              ),
+
+              // Twitter Login Button - UNCOMMENTED AND FIXED
+              CustomSocialButton(
+                text: 'Continue with Twitter',
+                icon: Icons.cancel_presentation_outlined,
+                color:  Colors.white, // Twitter's official color
+                textColor: Colors.black,
+                onPressed: () async {
+                  final user = await AuthService.signInWithTwitter(context);
                   if (user != null) {
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(
